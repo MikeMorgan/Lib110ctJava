@@ -333,7 +333,7 @@ class ConPanel extends JPanel implements KeyListener{
     int nlines, ncols,              //window dimensions in character sized 'chunks'
             fontHeight, fontWidth,  //height and width of console font in pixels
             width, height,          //height and width of console window in pixels
-            startbufx, startbufy,   //location of cursor when buffering started
+            startx, starty,   //location of cursor when buffering started
             endbufx, endbufy;       //location of cursor when buffering finished
             
     int x,y;    //current cursor position
@@ -363,13 +363,13 @@ class ConPanel extends JPanel implements KeyListener{
         this.setBackground(Color.black);
         img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         backg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
         buffer = (Graphics2D) img.getGraphics();
         font = new Font("monospaced", Font.PLAIN, fontpitch);
         buffer.setFont(font);
         Rectangle2D charRect = font.getMaxCharBounds(buffer.getFontRenderContext());
         fontHeight = (int) (charRect.getHeight());
         fontWidth = (int) (charRect.getWidth());
+        if(fontWidth > fontHeight) fontWidth /= 2;
         nlines = height/fontHeight;
         ncols = width/fontWidth - 1;
         text = new FormattedChar[nlines][ncols];
@@ -474,8 +474,8 @@ class ConPanel extends JPanel implements KeyListener{
     
     public String gets()
     {
-        int startx = x;
-        int starty = y;
+        startx = x;
+        starty = y;
         reading = buffering = true;
         while(!got);
         got = reading = buffering = false;
@@ -604,34 +604,36 @@ class ConPanel extends JPanel implements KeyListener{
         
         if(e.getKeyChar() == 8)
         {   
-            if(x>0)
-                --x;
-            else if(y>0)
+            if(x > startx || y > starty)
             {
-                --y;
-                for(x=ncols-1; x==' '; --x);
+                if(x>0)
+                    --x;
+                else if(y>0)
+                {
+                    --y;
+                    for(x=ncols-1; x==' '; --x);
+                }
+                try
+                {
+                    text[y][x].set(' ');
+                }
+                catch(ArrayIndexOutOfBoundsException ex)
+                {
+                    System.out.println("Method KEYTYPED");
+                    System.out.println("X value: " + x); 
+                    System.out.println("Max value: " + ncols); 
+                    System.out.println("Y value: " + x); 
+                    System.out.println("Max value: " + nlines); 
+                }            
+                render();
+                repaint(x*fontWidth, y*fontHeight, fontWidth, fontHeight);  
             }
-            try
-            {
-                text[y][x].set(' ');
-            }
-            catch(ArrayIndexOutOfBoundsException ex)
-            {
-                System.out.println("Method KEYTYPED");
-                System.out.println("X value: " + x); 
-                System.out.println("Max value: " + ncols); 
-                System.out.println("Y value: " + x); 
-                System.out.println("Max value: " + nlines); 
-            }            
-            render();
-            repaint(x*fontWidth, y*fontHeight, fontWidth, fontHeight);   
-            
         }
         else
         {
             last = e.getKeyChar();
             if(!buffering) got = true;
-            if(buffering && last == '\n')
+            if(buffering && (last == 10 || last == 13))
             {
                 endbufx = x;
                 endbufy = y;
