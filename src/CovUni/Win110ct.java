@@ -474,8 +474,14 @@ class ConPanel extends JPanel implements KeyListener{
         startx = x;
         starty = y;
         reading = buffering = true;
-        while(!got);
-        got = reading = buffering = false;
+        synchronized(this){
+            try
+            {
+                this.wait();
+            }
+            catch(Exception e) {}
+        }
+        reading = buffering = false;
         StringBuffer result = new StringBuffer();
         while(startx < endbufx || starty < endbufy)
         {
@@ -537,7 +543,7 @@ class ConPanel extends JPanel implements KeyListener{
     
     public Boolean waiting()
     {
-        if(!reading && !got) 
+        if(!reading) 
             reading = true;
         else if(got) 
         {
@@ -550,8 +556,14 @@ class ConPanel extends JPanel implements KeyListener{
     public char getchar()
     {
         reading = true;
-        while(!got);
-        got = false;
+        synchronized(this){
+            try
+            {
+                this.wait();
+            }
+            catch(Exception e) {}
+        }
+        
         reading = false;
         return last;
     }
@@ -639,12 +651,22 @@ class ConPanel extends JPanel implements KeyListener{
         else
         {
             last = e.getKeyChar();
-            if(!buffering) got = true;
+            if(!buffering) 
+            {
+                got = true;
+                synchronized(this)
+                {
+                    this.notify();
+                }
+            }
             if(buffering && (last == 10 || last == 13))
             {
                 endbufx = x;
                 endbufy = y;
-                got = true;
+                synchronized(this)
+                {
+                    this.notify();
+                }
             }
             if(echo) putchar(last);
             
