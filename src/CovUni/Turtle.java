@@ -17,7 +17,7 @@ import java.awt.Graphics2D;
  */
 public class Turtle{
     float direction; 
-    int x, y;
+    double x, y;
     Win110ct win;
     Graphics2D graph;
     Color cl;
@@ -49,15 +49,15 @@ public class Turtle{
      */
     public void moveForward(double x)
     {
-        int x1 = this.x + (int) (Math.sin(direction) * x);
-        int y1 = this.y + (int) (Math.cos(direction) * x);
+        double x1 = this.x + (Math.sin(direction) * x);
+        double y1 = this.y + (Math.cos(direction) * x);
         
         if(drawing)
         {
             graph.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
             graph.setColor(cl);
             graph.setStroke(stroke);
-            graph.drawLine(this.x, this.y, x1, y1);
+            graph.drawLine((int)Math.round(this.x),(int) Math.round(this.y), (int)Math.round(x1), (int)Math.round(y1));
         }
         this.x = x1;
         this.y = y1;
@@ -92,14 +92,62 @@ public class Turtle{
     }
     
     /**
-     * Sets the pen color for the turtle
+     * Sets the pen colour for the turtle
      * 
-     * @param c the color 
+     * @param c the colour 
      * @see     Color
      */
     public void setColor(Color c)
     {
         cl = c;
+    }
+            
+    /**
+     * Sets the width of the line drawn by the turtle
+     * 
+     * @param width The line width 
+     */
+    public void setPenWidth(double width)
+    {
+        stroke = new BasicStroke( (float) width);
+    }
+    
+    /**
+     * Sets the position of the turtle on screen (in pixels)
+     * @param x the x coordinate
+     * @param y the y coordinate
+     */
+    public void setPosition(double x, double y)
+    {
+        this.x = x;
+        this.y = y;
+    }
+    
+    /**
+     * Gets the Turtle's current line width
+     * @return The line width
+     */
+    public double getPenWidth()
+    {
+        return (double) stroke.getLineWidth();
+    }
+    
+    /**
+     * Gets the turtle's current x coordinate (in pixels) 
+     * @return  the x coordinate 
+     */
+    public double getx()
+    {
+        return x;
+    }
+    
+    /**
+     * Gets the turtle's current y coordinate (in pixels)
+     * @return  the y coordinate 
+     */
+    public double gety()
+    {
+        return y;
     }
     
     /**
@@ -123,30 +171,12 @@ public class Turtle{
     }
     
     /**
-     * Sets the width of the line drawn by the turtle
+     * Checks to see if the turtle is drawing
      * 
-     * @param width The line width 
+     * @return  true if the turtle is drawing, false otherwise 
      */
-    public void setPenWidth(double width)
+    public Boolean isDrawing()
     {
-        stroke = new BasicStroke( (float) width);
-    }
-    
-    /**
-     * Gets the turtle's current x coordinate (in pixels) 
-     * @return  the x coordinate 
-     */
-    public int getx()
-    {
-        return x;
-    }
-    
-    /**
-     * Gets the turtle's current y coordinate (in pixels)
-     * @return  the y coordinate 
-     */
-    public int gety()
-    {
-        return y;
+        return this.drawing;
     }
 }

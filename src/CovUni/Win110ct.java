@@ -39,6 +39,8 @@ public class Win110ct extends JFrame{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         
+        width = w;
+        height = h;
         
         consol = new ConPanel(w,h,fontPitch, this);
         this.getContentPane().add(consol);
@@ -217,6 +219,7 @@ public class Win110ct extends JFrame{
      */
     public void clearBack()
     {
+        consol.clearBackRect(0, 0, width, height);
     }
     
     /**
@@ -227,9 +230,9 @@ public class Win110ct extends JFrame{
      * @param   width   The width of the rectangle
      * @param   height  The height of the rectangle
      */
-    public void clearBack(int x, int y, int width, int height)
+    public void clearBack(int x, int y, int w, int h)
     {
-        
+        consol.clearBackRect(x, y, w, h);
     }
     
     /**
@@ -238,6 +241,7 @@ public class Win110ct extends JFrame{
      */
     public void clearChar()
     {
+        consol.clearChars(1);
     }
     
     /**
@@ -247,7 +251,7 @@ public class Win110ct extends JFrame{
      */
     public void clearChars(int nChars)
     {
-        
+        consol.clearChars(nChars);
     }
     
     /**
@@ -346,8 +350,8 @@ class ConPanel extends JPanel implements KeyListener{
             
     Font font;
     
-    BufferedImage img, backg;
-    Graphics2D buffer;          //enables rendering to bitmap, prior to repaint
+    BufferedImage textImg, backg;
+    Graphics2D textBuffer;          //enables rendering to bitmap, prior to repaint
     
     char last;          //stores the last 'meaningful' character read from the keyboard
     Color fg,bg;        //current foreground and background color
@@ -361,12 +365,15 @@ class ConPanel extends JPanel implements KeyListener{
         this.height = height;
         this.wind = wind;
         this.setBackground(Color.black);
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        textImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         backg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        buffer = (Graphics2D) img.getGraphics();
+        
+        textBuffer = (Graphics2D) textImg.getGraphics();
         font = new Font("monospaced", Font.PLAIN, fontpitch);
-        buffer.setFont(font);
-        Rectangle2D charRect = font.getMaxCharBounds(buffer.getFontRenderContext());
+        textBuffer.setFont(font);
+        textBuffer.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        Rectangle2D charRect = font.getMaxCharBounds(textBuffer.getFontRenderContext());
         fontHeight = (int) (charRect.getHeight());
         fontWidth = (int) (charRect.getWidth());
         if(fontWidth > fontHeight) fontWidth /= 2;
@@ -384,6 +391,7 @@ class ConPanel extends JPanel implements KeyListener{
         last = ' ';
         got = false;
         this.setFocusable(true);
+        this.setDoubleBuffered(true);
         this.addKeyListener(this);
         
     }
@@ -393,46 +401,35 @@ class ConPanel extends JPanel implements KeyListener{
         super.paintComponent(g);
         
         Graphics2D g2d = (Graphics2D) g;
-       
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+        
+        g2d.setColor(Color.black);
+        g2d.fillRect(0, 0, width, height);
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
         g2d.drawImage(backg,0,0,null); 
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-        g2d.drawImage(img,0,0,null);
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
+        g2d.drawImage(textImg,0,0,null);
+        //g2d.drawImage(combined, 0, 0, null);
         if(turtling)
         {
             g2d.setColor(turtle.getColor());
-            g2d.fillOval(turtle.getx()-5, turtle.gety()-5, 10, 10);
+            g2d.fillOval( (int) Math.round(turtle.getx()-8), (int) Math.round(turtle.gety()-10), 16, 16);
             double dir = turtle.getDirection();
-            int x1 = turtle.getx()+ (int) (7.0 * Math.sin(dir));
-            int y1 = turtle.gety()+ (int) (7.0 * Math.cos(dir));
+            double x1 = turtle.getx()+ (8.0 * Math.sin(dir));
+            double y1 = turtle.gety()+ (8.0 * Math.cos(dir));
             g2d.setStroke(new BasicStroke(3));
-            g2d.drawLine(turtle.getx(), turtle.gety(), x1, y1);
+            g2d.drawLine((int) Math.round(turtle.getx()), (int) Math.round(turtle.gety()), (int) Math.round(x1), (int) Math.round(y1));
         }
     }
     
     public void render()
     {
-        buffer.setColor(Color.black);
-        buffer.fillRect(x*fontWidth, y*fontHeight, fontWidth, fontHeight);
-        BufferedImage subimg = backg.getSubimage(x*fontWidth, y*fontHeight, fontWidth, fontHeight);        
-        buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-        buffer.drawImage(subimg,x*fontWidth, y*fontHeight, null);
-        buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-        try
-        {
-            buffer.clearRect(x*fontWidth, y*fontHeight, fontWidth, fontHeight); 
-            buffer.setColor(text[y][x].getFore());
-            buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-            buffer.drawString(text[y][x].asString() ,x*fontWidth, (fontHeight - fontHeight/6) + fontHeight*y);
-        }
-        catch(ArrayIndexOutOfBoundsException ex)
-        {
-            System.out.println("Method RENDER");
-            System.out.println("X value: " + x); 
-            System.out.println("Max value: " + ncols); 
-            System.out.println("Y value: " + x); 
-            System.out.println("Max value: " + nlines); 
-        } 
+        if(y>=nlines || x>=ncols) return;
+        textBuffer.setColor(text[y][x].getBack());
+        textBuffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+        textBuffer.fillRect(x*fontWidth, y*fontHeight, fontWidth, fontHeight);
+        
+        textBuffer.setColor(text[y][x].getFore());
+        textBuffer.drawString(text[y][x].asString() ,x*fontWidth, (fontHeight - fontHeight/6) + fontHeight*y);
     }
     
     public void setFore(Color c)
@@ -510,19 +507,11 @@ class ConPanel extends JPanel implements KeyListener{
             }
         }
        
-        try
+       if(x<ncols && y < nlines)
         {
             text[y][x].set(c);
             text[y][x].setFore(fg);
             text[y][x].setBack(bg);
-        }
-        catch(ArrayIndexOutOfBoundsException ex)
-        {
-            System.out.println("Method ADDCHAR");
-            System.out.println("X value: " + x); 
-            System.out.println("Max value: " + ncols); 
-            System.out.println("Y value: " + x); 
-            System.out.println("Max value: " + nlines); 
         }
     }
     
@@ -574,17 +563,43 @@ class ConPanel extends JPanel implements KeyListener{
                 text[i][j].set(' ');
                 text[i][j].setFore(fg);
                 text[i][j].setBack(bg);
-                render();
+                //render();
             }
-        buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-        buffer.setColor(Color.black);
-        buffer.fillRect(x*fontWidth, y*fontHeight, fontWidth, fontHeight);
-        buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-        //buffer.clearRect(0, 0, width, height); 
-        buffer.drawImage(backg, null, 0, 0);
+        for(int j=0; j<width; j++)
+            for(int k=0; k<height; k++)
+                    textImg.setRGB(j, k, 0x00000000);
         repaint();
     }
-   
+    
+    public void clearChars(int nChars)
+    {
+        int _x = x;
+        int _y = y;
+        for(int i=0; i<nChars; ++i)
+        {
+            for(int j=0; j<fontWidth; j++)
+                for(int k=0; k<fontHeight; k++)
+                    textImg.setRGB(_x*fontWidth+j, _y*fontHeight+k, 0x00000000);
+                    
+            if(++_x >= ncols)
+            {
+                ++_y;
+                if(_y >= nlines)
+                    break;
+                _x=0;
+            }          
+        }
+        repaint();
+    }
+
+    public void clearBackRect(int x, int y, int w, int h)
+    {
+        for(int j=x; j<x+w; j++)
+            for(int k=y; k<y+h; k++)
+                backg.setRGB(j, k, 0x00000000);
+        repaint(x,y,w,h);
+    }
+    
     @Override
     public void keyPressed(KeyEvent e)
     {
@@ -613,18 +628,10 @@ class ConPanel extends JPanel implements KeyListener{
                     --y;
                     for(x=ncols-1; x==' '; --x);
                 }
-                try
+                if(y < nlines && x < ncols)
                 {
                     text[y][x].set(' ');
                 }
-                catch(ArrayIndexOutOfBoundsException ex)
-                {
-                    System.out.println("Method KEYTYPED");
-                    System.out.println("X value: " + x); 
-                    System.out.println("Max value: " + ncols); 
-                    System.out.println("Y value: " + x); 
-                    System.out.println("Max value: " + nlines); 
-                }            
                 render();
                 repaint(x*fontWidth, y*fontHeight, fontWidth, fontHeight);  
             }
