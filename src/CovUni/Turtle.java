@@ -72,6 +72,11 @@ public class Turtle{
     public void turn(double degrees)
     {        
         direction += Math.toRadians(degrees);
+        if(direction > Math.PI*2 || direction < 0)
+        {
+            double periods = Math.floor(direction/(Math.PI*2));
+            direction -= Math.PI*2*periods;
+        }
         win.repaint();
     }
     
