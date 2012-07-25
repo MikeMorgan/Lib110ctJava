@@ -160,7 +160,7 @@ public class Win110ct extends JFrame{
      */
     public int nextInt() throws NumberFormatException
     {
-        return Integer.parseInt(consol.gets());
+        return Integer.parseInt(consol.gets().trim());
     }
     
     /**
@@ -170,7 +170,7 @@ public class Win110ct extends JFrame{
      */
     public double nextDouble() throws NumberFormatException
     {
-        return Double.parseDouble(consol.gets());
+        return Double.parseDouble(consol.gets().trim());
     }
     
     /**
@@ -349,6 +349,7 @@ class ConPanel extends JPanel implements KeyListener{
             turtling;   //indicates whether the turtle should be displayed on repaint()   
             
     Font font;
+    StringBuffer bfr;   //to store buffered input
     
     BufferedImage textImg, backg;
     Graphics2D textBuffer;          //enables rendering to bitmap, prior to repaint
@@ -379,6 +380,7 @@ class ConPanel extends JPanel implements KeyListener{
         if(fontWidth > fontHeight) fontWidth /= 2;
         nlines = height/fontHeight;
         ncols = width/fontWidth - 1;
+        bfr = new StringBuffer();
         text = new FormattedChar[nlines][ncols];
         for(int i=0; i<nlines; ++i)
             for(int j=0; j<ncols; ++j)
@@ -473,6 +475,7 @@ class ConPanel extends JPanel implements KeyListener{
     {
         startx = x;
         starty = y;
+        bfr =  new StringBuffer();
         reading = buffering = true;
         synchronized(this){
             try
@@ -482,26 +485,15 @@ class ConPanel extends JPanel implements KeyListener{
             catch(Exception e) {}
         }
         reading = buffering = false;
-        StringBuffer result = new StringBuffer();
-        while(startx < endbufx || starty < endbufy)
-        {
-           result.append(text[starty][startx].get());
-           if(++startx >= ncols)
-           {
-               startx = 0;
-               ++starty;
-           }
-        }
-        return result.toString();
+        return bfr.toString();
     }
     
     public void addchar(char c)
     {
-        if(c == '\n')
+        if(c == 10 || c == 13)
         {
             y++;
             x=0;
-            return;
         }
         else if(c == '\t')
         {
@@ -513,7 +505,7 @@ class ConPanel extends JPanel implements KeyListener{
             }
         }
        
-       if(x<ncols && y < nlines)
+        else if(x<ncols && y < nlines)
         {
             text[y][x].set(c);
             text[y][x].setFore(fg);
@@ -533,7 +525,7 @@ class ConPanel extends JPanel implements KeyListener{
     public void putchar(char c)
     {
         addchar(c);
-        if(c != '\n' && c != '\t')
+        if(c != 13 && c != 10 && c != '\t')
         {
             render();
             repaint(x*fontWidth, y*fontHeight, fontWidth, fontHeight);
@@ -633,12 +625,13 @@ class ConPanel extends JPanel implements KeyListener{
         {   
             if(x > startx || y > starty)
             {
+                if(buffering) bfr.deleteCharAt(bfr.length()-1);   
                 if(x>0)
                     --x;
                 else if(y>0)
                 {
                     --y;
-                    for(x=ncols-1; x==' '; --x);
+                    x=ncols-1;
                 }
                 if(y < nlines && x < ncols)
                 {
@@ -669,7 +662,7 @@ class ConPanel extends JPanel implements KeyListener{
                 }
             }
             if(echo) putchar(last);
-            
+            if(buffering) bfr.append(last);                    
         }
     }
     

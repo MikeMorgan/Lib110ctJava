@@ -23,6 +23,8 @@ public class Turtle{
     Color cl;
     BasicStroke stroke;
     Boolean drawing;
+    int pauseSize;
+    long t;
     
     public static final double LEFT_TURN = 90;
     public static final double RIGHT_TURN = 270;
@@ -40,6 +42,7 @@ public class Turtle{
         x = win.getWidth()/2; 
         y = win.getHeight()/2;
         stroke = new BasicStroke(1.0f);
+        pauseSize = 0;
     }
     
     /**
@@ -59,9 +62,12 @@ public class Turtle{
             graph.setStroke(stroke);
             graph.drawLine((int)Math.round(this.x),(int) Math.round(this.y), (int)Math.round(x1), (int)Math.round(y1));
         }
+               
         this.x = x1;
         this.y = y1;
         win.repaint();
+        t = System.currentTimeMillis();
+        while(System.currentTimeMillis() < t + pauseSize);
     }
     
     /**
@@ -126,6 +132,15 @@ public class Turtle{
     {
         this.x = x;
         this.y = y;
+    }
+    
+    /**
+     * Sets the speed of the turtle (0-100) 100 is as fast as the machine can go
+     * @param speed the speed
+     */
+    public void setSpeed(int speed)
+    {
+        pauseSize = 100-speed;
     }
     
     /**

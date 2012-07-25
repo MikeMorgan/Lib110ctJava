@@ -38,8 +38,11 @@ public class Stopwatch
      */
     public long stop()
     {
-        elapsed = System.currentTimeMillis() - time;
-        running = false;
+         if(running)
+        {
+            elapsed += System.currentTimeMillis() - time;
+            running = false;
+        }
         return elapsed;
     }
     
@@ -58,8 +61,12 @@ public class Stopwatch
      */
     public long read()
     {
-        if(!running) return elapsed;
-        elapsed = System.currentTimeMillis() - time;
+        if(running)
+        {
+            long now = System.currentTimeMillis();
+            elapsed += now - time;
+            time = now;
+        }
         return elapsed;
     }
 }
